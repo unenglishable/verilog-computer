@@ -218,6 +218,32 @@ always @(indata0 or indata1 or select)
 endmodule
 
 //----------------------------------------------------------
+// 2:1 Multiplexer
+
+module MUX2_Address(
+	result,		// Output of multiplexer
+	indata0,	// Input 0
+	indata1,	// Input 1
+	select		// 1-bit select
+	);	
+
+output [2:0] result;
+input [2:0] indata0, indata1;
+input select;
+
+reg [2:0] result;
+
+always @(indata0 or indata1 or select)
+	case(select)
+	0: result = indata0;
+	1: result = indata1;
+	endcase
+
+endmodule
+
+
+
+//----------------------------------------------------------
 // 4:1 Multiplexer
 module MUX4(
 	result,		// 16 bit output

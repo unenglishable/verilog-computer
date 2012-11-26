@@ -115,6 +115,8 @@ reg [15:0] addResult;
 wire [15:0] shiftLeft2;
 wire aluzero;
 
+reg [2:0] RegDstMuxResult;
+
 //   --- Variables in the EX/MEM pipeline register ---
 // Pipelined MEM
 reg EXMEMBranch;
@@ -273,8 +275,8 @@ ALU alu1(
 	IDEXALUOp		// 3-bit select
 	);		
 
-MUX2 RegDstMux(
-	waddr,	// mux output
+MUX2_Address RegDstMux(
+	RegDstMuxResult,	// mux output
 	IDEXRegfield2,		// rt
 	IDEXRegfield3,		// rd
 	IDEXRegDst		// select
@@ -305,7 +307,7 @@ always @(posedge clock)
 	EXMEMALUZero <= aluzero;
 	EXMEMAddResult <= addResult;
 	EXMEMRegRead2 <= IDEXRegRead2;
-	EXMEMwaddr <= waddr;
+	EXMEMwaddr <= RegDstMuxResult;
 	end
 
 
