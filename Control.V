@@ -23,6 +23,7 @@ module Control(
 	MemWrite,
 	MemRead,
 	MemtoReg,
+	Stall,	// Stall instruction; PC gets old value again
 	clock,	// Clock input signal
 	OpCode,	// Opcode from the IF/ID pipeline register
 	reset		// Used to clear controller
@@ -38,6 +39,7 @@ output Jump;
 output MemWrite;
 output MemRead;
 output MemtoReg;
+output Stall;
 input  clock;
 input  [3:0] OpCode;		
 input  reset;		
@@ -53,6 +55,7 @@ reg Jump;
 reg MemWrite;
 reg MemRead;
 reg MemtoReg;
+reg Stall;
 
 // The controller is sequential circuit with four states.
 // It starts at state 0 and proceeds to states 1, 2, and 3. Then
@@ -165,6 +168,7 @@ always @(state)
 			MemWrite = 0; // No access to memory
 			MemRead = 0;
 			MemtoReg = 0; // Write reg file from ALU
+			Stall = 1;
 			end
 		1:	begin // opcode for sub is 1
 			RegWrite = 1;
@@ -176,6 +180,7 @@ always @(state)
 			MemWrite = 0; // No access to memory
 			MemRead = 0;
 			MemtoReg = 0; // Write reg file from ALU
+			Stall = 1;
 			end
 //		2:	begin // opcode for slt is 2
 //			RegWrite = 1;
@@ -187,6 +192,7 @@ always @(state)
 //			MemWrite = 0; // No access to memory
 //			MemRead = 0;
 //			MemtoReg = 0; // Write reg file from ALU
+//			Stall = 1;
 //			end
 		3:	begin // opcode for lw is 3
 			RegWrite = 1;
@@ -198,6 +204,7 @@ always @(state)
 			MemWrite = 0; // No access to memory
 			MemRead = 1;  // Read from memory
 			MemtoReg = 1; // Loading from memory to reg
+			Stall = 1;
 			end
 		4:	begin // opcode for sw is 4
 			RegWrite = 1;
@@ -209,6 +216,7 @@ always @(state)
 			MemWrite = 1; // Storing to memory
 			MemRead = 0;
 			MemtoReg = 0;
+			Stall = 1;
 			end
 
 		5:	begin // opcode for beq is 5
@@ -221,6 +229,7 @@ always @(state)
 			MemWrite = 0; // No access to memory
 			MemRead = 0;
 			MemtoReg = 0; // don't care
+			Stall = 1;
 			end
 		6:	begin // opcode for addi is 6
 			RegWrite = 1;
@@ -244,8 +253,23 @@ always @(state)
 			MemWrite = 0;
 			MemRead = 0;
 			MemtoReg = 0;
+			Stall = 1;
 			end
 		endcase
+		end
+
+	else if (state == 0)
+		begin
+		RegWrite = 0;
+		RegDst = 0;
+		ALUSrc = 0;
+		ALU_Select = 0;
+		Branch = 0;
+		Jump = 0;
+		MemWrite = 0;
+		MemRead = 0;
+		MemtoReg = 0;
+		Stall = 0;
 		end
 
 	else // Insert bubble for all other states
@@ -259,6 +283,7 @@ always @(state)
 		MemWrite = 0;
 		MemRead = 0;
 		MemtoReg = 0;
+		Stall = 1;
 		end
 	end
 	
