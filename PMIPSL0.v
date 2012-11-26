@@ -59,8 +59,6 @@ wire [2:0] IFIDRegfield3;
 wire [6:0] IFIDConst;
 
 //     --- Variables in the ID stage ---
-reg [2:0] MEMWBwaddr;
-reg WBMuxResult;
 
 wire [15:0] rdata1; // Variables connected to reg file
 wire [15:0] rdata2;
@@ -133,13 +131,21 @@ reg [15:0] EXMEMAddResult;
 reg [15:0] EXMEMRegRead2;
 reg [2:0] EXMEMwaddr;
 
-//   --- Variables in the EX/MEM pipeline register ---
+//   --- Variables in the MEM stage ---
+
+	//NOTHING HERE
+
+//   --- Variables in the MEM/WB pipeline register ---
 // Pipelined WB
 reg MEMWBRegWrite;
 reg MEMWBMemtoReg;
+reg [15:0] MEMWBdmemrdata;
+reg [15:0] MEMWBALUOut;
+reg [2:0] MEMWBwaddr;
 
-// Passed through pipelining
-// WORK ON THIS
+//   --- Variables in the MEM stage ---
+reg [15:0] WBMuxResult;
+
 
 // ***** Logic at each stage of the pipeline *****
 
@@ -314,7 +320,7 @@ always @(posedge clock)
 //------- MEM Stage ----------------
 
 assign dmemaddr = EXMEMALUOut;
-assign PCSrc = EXMEMALUZero && Branch;
+assign PCSrc = EXMEMALUZero && EXMEMBranch;
 
 //------- MEM/WB pipeline register ----
 
@@ -326,8 +332,17 @@ always @(posedge clock)
 
 	// Passed through pipeling
 	MEMWBwaddr <= EXMEMwaddr;
+	MEMWBALUOut <= EXMEMALUOut;
+	MEMWBdmemrdata <= dmemrdata;
 	end
 
 //------- WB Stage ------------------
-	
+
+MUX2 WBMux(
+	WBMuxResult,
+	MEMWBdmemrdata,
+	MEMWBALUOut,
+	MEMWBMemtoReg
+	);
+
 endmodule
