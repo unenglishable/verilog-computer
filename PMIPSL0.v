@@ -96,13 +96,15 @@ reg EXMEMALUZero;
 
 //---- IF Stage and PC logic --------------------
 
-
 assign PCPlus2 = PC + 2; // This is the adder circuit near the PC
+
+MUX2 stallMux(stallMuxResult,PCPlus2,PC,stall);
+MUX2 pcMux(pcMuxResult,stallMuxResult,pcAddResult,pcSrc);
 
 always @(posedge clock)
 	begin
 	if (reset==1) 	PC <= 0;
-	else 			PC <= PCPlus2;
+	else 			PC <= PCMuxResult;
 	end
 
 assign imemaddr = PC; // PC = instruction memory address
