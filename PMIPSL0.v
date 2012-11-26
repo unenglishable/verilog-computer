@@ -164,6 +164,8 @@ always @(posedge clock)
 
 assign imemaddr = PC; // PC = instruction memory address
 
+//---- IF/ID Pipeline Register --------
+
 always @(posedge clock)
 	begin
 	if (reset == 1)
@@ -235,32 +237,64 @@ Control cntrol1(
 
 always @(posedge clock)
 	begin
-	// Pipelined EX
-	IDEXALUSrc <= ALUSrc;
-	IDEXALUOp <= ALUOp;
-	IDEXRegDst <= RegDst;
+	if (reset == 1)
+		begin
+		// Pipelined EX
+		IDEXALUSrc <= 0;
+		IDEXALUOp <= 0;
+		IDEXRegDst <= 0;
 
-	// Pipelined M
-	IDEXBranch <= Branch;
-	IDEXMemRead <= MemRead;
-	IDEXMemWrite <= MemWrite;
+		// Pipelined M
+		IDEXBranch <= 0;
+		IDEXMemRead <= 0;
+		IDEXMemWrite <= 0;
 
-	// Pipelined WB
-	IDEXRegWrite <= RegWrite;
-	IDEXMemtoReg <= MemtoReg;
+		// Pipelined WB
+		IDEXRegWrite <= 0;
+		IDEXMemtoReg <= 0;
 
-	// Passed through pipeling
-	IDEXPCPlus2 <= IFIDPCPlus2;
-	IDEXRegRead1 <= rdata1;
-	IDEXRegRead2 <= rdata2;
-	IDEXSignExtend <= IDSignExt;
+		// Passed through pipeling
+		IDEXPCPlus2 <= 0;
+		IDEXRegRead1 <= 0;
+		IDEXRegRead2 <= 0;
+		IDEXSignExtend <= 0;
 
-	// Sasaki added, might not need
-	IDEXInstr <= IFIDInstr;
-	
-	// For MUX in Execute Stage, RegDst
-	IDEXRegfield2 <= IFIDRegfield2; // rt
-	IDEXRegfield3 <= IFIDRegfield3; // rd
+		// Sasaki added, might not need
+		IDEXInstr <= 0;
+
+		// For MUX in Execute Stage, RegDst
+		IDEXRegfield2 <= 0; // rt
+		IDEXRegfield3 <= 0; // rd
+		end
+	else
+		begin
+		// Pipelined EX
+		IDEXALUSrc <= ALUSrc;
+		IDEXALUOp <= ALUOp;
+		IDEXRegDst <= RegDst;
+
+		// Pipelined M
+		IDEXBranch <= Branch;
+		IDEXMemRead <= MemRead;
+		IDEXMemWrite <= MemWrite;
+
+		// Pipelined WB
+		IDEXRegWrite <= RegWrite;
+		IDEXMemtoReg <= MemtoReg;
+
+		// Passed through pipeling
+		IDEXPCPlus2 <= IFIDPCPlus2;
+		IDEXRegRead1 <= rdata1;
+		IDEXRegRead2 <= rdata2;
+		IDEXSignExtend <= IDSignExt;
+
+		// Sasaki added, might not need
+		IDEXInstr <= IFIDInstr;
+
+		// For MUX in Execute Stage, RegDst
+		IDEXRegfield2 <= IFIDRegfield2; // rt
+		IDEXRegfield3 <= IFIDRegfield3; // rd
+		end
 	end
 
 
@@ -299,21 +333,42 @@ assign aluresult = aluout1; // Connect the alu with the outside world
 
 always @(posedge clock)
  	begin
-	// Pipelined M
-	EXMEMBranch <= IDEXBranch;
-	EXMEMMemRead <= IDEXMemRead;
-	EXMEMMemWrite <= IDEXMemWrite;
+	if (reset == 1)
+		begin
+		// Pipelined M
+		EXMEMBranch <= 0;
+		EXMEMMemRead <= 0;
+		EXMEMMemWrite <= 0;
 
-	// Pipelined WB
-	EXMEMRegWrite <= IDEXRegWrite;
-	EXMEMMemtoReg <= IDEXMemtoReg;
+		// Pipelined WB
+		EXMEMRegWrite <= 0;
+		EXMEMMemtoReg <= 0;
 
-	// Passed through pipeling
-	EXMEMALUOut <= aluout1;
-	EXMEMALUZero <= aluzero;
-	EXMEMAddResult <= addResult;
-	EXMEMRegRead2 <= IDEXRegRead2;
-	EXMEMwaddr <= RegDstMuxResult;
+		// Passed through pipeling
+		EXMEMALUOut <= 0;
+		EXMEMALUZero <= 0;
+		EXMEMAddResult <= 0;
+		EXMEMRegRead2 <= 0;
+		EXMEMwaddr <= 0;
+		end
+	else
+		begin
+		// Pipelined M
+		EXMEMBranch <= IDEXBranch;
+		EXMEMMemRead <= IDEXMemRead;
+		EXMEMMemWrite <= IDEXMemWrite;
+
+		// Pipelined WB
+		EXMEMRegWrite <= IDEXRegWrite;
+		EXMEMMemtoReg <= IDEXMemtoReg;
+
+		// Passed through pipeling
+		EXMEMALUOut <= aluout1;
+		EXMEMALUZero <= aluzero;
+		EXMEMAddResult <= addResult;
+		EXMEMRegRead2 <= IDEXRegRead2;
+		EXMEMwaddr <= RegDstMuxResult;
+		end
 	end
 
 
@@ -326,14 +381,28 @@ assign PCSrc = EXMEMALUZero && EXMEMBranch;
 
 always @(posedge clock)
  	begin
-	// Pipelined WB
-	MEMWBRegWrite <= EXMEMRegWrite;
-	MEMWBMemtoReg <= EXMEMMemtoReg;
+	if (reset == 1)
+		begin
+		// Pipelined WB
+		MEMWBRegWrite <= 0;
+		MEMWBMemtoReg <= 0;
 
-	// Passed through pipeling
-	MEMWBwaddr <= EXMEMwaddr;
-	MEMWBALUOut <= EXMEMALUOut;
-	MEMWBdmemrdata <= dmemrdata;
+		// Passed through pipeling
+		MEMWBwaddr <= 0;
+		MEMWBALUOut <= 0;
+		MEMWBdmemrdata <= 0;
+		end
+	else
+		begin
+		// Pipelined WB
+		MEMWBRegWrite <= EXMEMRegWrite;
+		MEMWBMemtoReg <= EXMEMMemtoReg;
+
+		// Passed through pipeling
+		MEMWBwaddr <= EXMEMwaddr;
+		MEMWBALUOut <= EXMEMALUOut;
+		MEMWBdmemrdata <= dmemrdata;
+		end
 	end
 
 //------- WB Stage ------------------
