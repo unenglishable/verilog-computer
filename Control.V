@@ -241,6 +241,7 @@ always @(state)
 			MemWrite = 0; // No access to memory
 			MemRead = 0;
 			MemtoReg = 1; // Write reg file from ALU
+			Stall = 1;
 			end
 		default:
 			begin
