@@ -31,11 +31,11 @@ input reset;
 //
 //     --- Variables in IF stage and PC logic ---
 
-reg	[31:0] PC; 
-wire [31:0] StallMuxResult;
-wire [31:0] PCMuxResult;
-wire [31:0] PCAddResult;
-wire [31:0] PCPlus2;
+reg	[15:0] PC; 
+wire [15:0] StallMuxResult;
+wire [15:0] PCMuxResult;
+wire [15:0] PCAddResult;
+wire [15:0] PCPlus2;
 wire Stall;
 wire PCSrc;
 
