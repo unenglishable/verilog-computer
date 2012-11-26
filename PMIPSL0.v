@@ -112,6 +112,9 @@ reg [2:0] IDEXRegfield3; // rd
 //   --- Variables in the EX stage ---
 wire [15:0] alusrc2;
 wire [15:0] aluout1;
+reg [15:0] addResult;
+wire [15:0] shiftLeft2;
+wire [2:0] regDstMuxResult;
 wire aluzero;
 
 //   --- Variables in the EX/MEM pipeline register ---
@@ -124,9 +127,11 @@ reg EXMEMRegWrite;
 reg EXMEMMemtoReg;
 
 // Passed through pipelining
-// WORK ON THIS
 reg [15:0] EXMEMALUOut;
 reg EXMEMALUZero;
+reg [15:0] EXMEMAddResult;
+reg [15:0] EXMEMRegRead2;
+reg [2:0] EXMEMRegDstMuxResult;
 
 //   --- Variables in the EX/MEM pipeline register ---
 // Pipelined WB
@@ -196,13 +201,10 @@ assign negclock = ~clock;  // Reg file is synchronized
 	waddr,			// write address
 	IFIDRegfield1,	// read address 1
 	IFIDRegfield2,	// read address 2
-	RegWriteStub	// write enable
+	MEMWBRegWrite	// write enable
 	);			
 
 assign IDSignExt = {{9{IFIDInstr[6]}},IFIDInstr[6:0]};
-assign IDEXRegfield2 = IFIDRegfield2;
-assign IDEXRegfield3 = IFIDRegfield3;
-
 
 Control cntrol1(
 	PCControl,					
@@ -251,18 +253,18 @@ always @(posedge clock)
 	IDEXInstr <= IFIDInstr;
 	
 	// For MUX in Execute Stage, RegDst
-	IFEXRegfield2 <= IFIDRegfield2; // rt
-	IFEXRegfield3 <= IFEXRegfield3; // rd
+	IDEXRegfield2 <= IFIDRegfield2; // rt
+	IDEXRegfield3 <= IFIDRegfield3; // rd
 	end
 
 
 //---- EX Stage --------
 
 MUX2 alumux( // ALU multiplexer
-	alusrc2,		
-	IDEXRegRead2,	
-	IDEXSignExtend,	
-	IDEXALUSrc		
+	alusrc2,	// mux output
+	IDEXRegRead2,	// input 1
+	IDEXSignExtend,	// input 2
+	IDEXALUSrc	// select
 	);	
 
 ALU alu1(
@@ -272,6 +274,17 @@ ALU alu1(
 	alusrc2,		// data input
 	IDEXALUOp		// 3-bit select
 	);		
+
+MUX2 RegDstMux(
+	regDstMuxResult,	// mux output
+	IDEXRegfield2,		// rt
+	IDEXRegfield3,		// rd
+	IDEXRegDst		// select
+	);
+
+assign shiftLeft2 = IDEXSignExtend << 2;
+always @(IDEXPCPlus2 or shiftLeft2)
+	addResult = IDEXPCPlus2 + shiftLeft2;
 
 assign aluresult = aluout1; // Connect the alu with the outside world
 
@@ -289,10 +302,12 @@ always @(posedge clock)
 	EXMEMRegWrite <= IDEXRegWrite;
 	EXMEMMemtoReg <= IDEXMemtoReg;
 
-	// WORK ON THIS!!
 	// Passed through pipeling
 	EXMEMALUOut <= aluout1;
 	EXMEMALUZero <= aluzero;
+	EXMEMAddResult <= addResult;
+	EXMEMRegRead2 <= IDEXRegRead2;
+	EXMEMRegDstMuxResult <= regDstMuxResult;
 	end
 
 
