@@ -32,7 +32,12 @@ input reset;
 //     --- Variables in IF stage and PC logic ---
 
 reg	[31:0] PC; 
+wire [31:0] StallMuxResult;
+wire [31:0] PCMuxResult;
+wire [31:0] PCAddResult;
 wire [31:0] PCPlus2;
+wire Stall;
+wire PCSrc;
 
         // Set these port values since the datapath is
 assign dmemwdata = 0; // incomplete.  You should replace these.
@@ -60,37 +65,66 @@ wire negclock;
 
 
 wire [15:0] IDSignExt; // Sign extension
-
                 // Variables from the controller
 wire [1:0] PCControl;	// Control signals to the PC logic
 wire RegWrite;
 wire RegDst;
-wire [1:0] ALU_Select;
 wire Branch;
 wire Jump;
 wire MemWrite;
 wire MemRead;
 wire MemtoReg;
+wire [2:0] ALUOp;
+wire ALUSrc;
 
  //  --- Variables in the ID/EX pipeline register ---
+// Pipelined EX
+reg IDEXALUSrc;
+reg [2:0] IDEXALUOp;
+reg IDEXRegDst;
+// Pipelined MEM
+reg IDEXBranch;
+reg IDEXMemWrite;
+reg IDEXMemRead;
+// Pipelined WB
+reg IDEXRegWrite;
+reg IDEXMemtoReg;
+
+// Passed through pipelining
 reg [15:0] IDEXPCPlus2; 
 reg [15:0] IDEXRegRead1;
 reg [15:0] IDEXRegRead2;
-reg [16:0] IDEXInstr;
 reg [15:0] IDEXSignExtend;
-reg IDEXALUSrc;
-reg [2:0] IDEXALU_Select;
+
+// Sasaki added, might not need
+reg [16:0] IDEXInstr;
 
 //   --- Variables in the EX stage ---
 wire [15:0] alusrc2;
 wire [15:0] aluout1;
 wire aluzero;
-wire [2:0] aluselect;
 
 //   --- Variables in the EX/MEM pipeline register ---
+// Pipelined MEM
+reg EXMEMBranch;
+reg EXMEMMemWrite;
+reg EXMEMMemRead;
+// Pipelined WB
+reg EXMEMRegWrite;
+reg EXMEMMemtoReg;
+
+// Passed through pipelining
+// WORK ON THIS
 reg [15:0] EXMEMALUOut;
 reg EXMEMALUZero;
 
+//   --- Variables in the EX/MEM pipeline register ---
+// Pipelined WB
+reg MEMWBRegWrite;
+reg MEMWBMemtoReg;
+
+// Passed through pipelining
+// WORK ON THIS
 
 // ***** Logic at each stage of the pipeline *****
 
@@ -98,8 +132,8 @@ reg EXMEMALUZero;
 
 assign PCPlus2 = PC + 2; // This is the adder circuit near the PC
 
-MUX2 stallMux(stallMuxResult,PCPlus2,PC,stall);
-MUX2 pcMux(pcMuxResult,stallMuxResult,pcAddResult,pcSrc);
+MUX2 stallMux(StallMuxResult,PCPlus2,PC,Stall);
+MUX2 pcMux(PCMuxResult,StallMuxResult,PCAddResult,PCSrc);
 
 always @(posedge clock)
 	begin
@@ -169,6 +203,7 @@ Control cntrol1(
 	MemWrite,
 	MemRead,
 	MemtoReg,
+	Stall,
 	clock,			
 	IFIDOpcode,	// from the IFID pipeline register
 	reset			
@@ -180,12 +215,28 @@ Control cntrol1(
 
 always @(posedge clock)
 	begin
+	// Pipelined EX
+	IDEXALUSrc <= ALUSrc;
+	IDEXALUOp <= ALUOp;
+	IDEXRegDst <= RegDst;
+
+	// Pipelined M
+	IDEXBranch <= Branch;
+	IDEXMemRead <= MemRead;
+	IDEXMemWrite <= MemWrite;
+
+	// Pipelined WB
+	IDEXRegWrite <= RegWrite;
+	IDEXMemtoReg <= MemtoReg;
+
+	// Passed through pipeling
 	IDEXPCPlus2 <= IFIDPCPlus2;
 	IDEXRegRead1 <= rdata1;
 	IDEXRegRead2 <= rdata2;
-	IDEXInstr <= IFIDInstr; // I probably don't need the instruction but just in case
 	IDEXSignExtend <= IDSignExt;
-	IDEXALU_Select <= ALU_Select;
+
+	// Sasaki added, might not need
+	IDEXInstr <= IFIDInstr;
 	end
 
 
@@ -203,7 +254,7 @@ ALU alu1(
 	aluzero,	// equals 1 if the result is 0, and 0 otherwise
 	IDEXRegRead1,	// data input
 	alusrc2,		// data input
-	aluselect		// 3-bit select
+	IDEXALUOp		// 3-bit select
 	);		
 
 assign aluresult = aluout1; // Connect the alu with the outside world
@@ -213,6 +264,17 @@ assign aluresult = aluout1; // Connect the alu with the outside world
 
 always @(posedge clock)
  	begin
+	// Pipelined M
+	EXMEMBranch <= IDEXBranch;
+	EXMEMMemRead <= IDEXMemRead;
+	EXMEMMemWrite <= IDEXMemWrite;
+
+	// Pipelined WB
+	EXMEMRegWrite <= IDEXRegWrite;
+	EXMEMMemtoReg <= IDEXMemtoReg;
+
+	// WORK ON THIS!!
+	// Passed through pipeling
 	EXMEMALUOut <= aluout1;
 	EXMEMALUZero <= aluzero;
 	end
@@ -221,10 +283,19 @@ always @(posedge clock)
 //------- MEM Stage ----------------
 
 assign dmemaddr = EXMEMALUOut;
-
+assign PCSrc = EXMEMALUZero && Branch;
 
 //------- MEM/WB pipeline register ----
 
+always @(posedge clock)
+ 	begin
+	// Pipelined WB
+	MEMWBRegWrite <= EXMEMRegWrite;
+	MEMWBMemtoReg <= EXMEMMemtoReg;
+
+	// WORK ON THIS!!
+	// Passed through pipeling
+	end
 
 //------- WB Stage ------------------
 	
