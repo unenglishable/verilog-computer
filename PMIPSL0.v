@@ -40,12 +40,17 @@ wire Stall;
 wire PCSrc;
 
         // Set these port values since the datapath is
-assign dmemwdata = 0; // incomplete.  You should replace these.
-assign dmemwdata = 0;
-assign dmemwrite = 0;
-assign dmemread = 0;
+		  // incomplete.  You should replace these.
+		  
+reg EXMEMdmemwdata;
+reg EXMEMdmemwrite;
+reg EXMEMdmemread;
 
- //    --- Variables in the IF/ID pipeline register ---
+assign dmemwdata = EXMEMdmemwdata;
+assign dmemwrite = EXMEMdmemwrite;
+assign dmemread = EXMEMdmemread;
+
+//    --- Variables in the IF/ID pipeline register ---
 reg [16:0] IFIDInstr; 
 reg [15:0] IFIDPCPlus2;
 wire [3:0] IFIDOpcode;
@@ -55,7 +60,8 @@ wire [2:0] IFIDRegfield3;
 wire [6:0] IFIDConst;
 
 //     --- Variables in the ID stage ---
-wire RegWriteStub; //** Variable you should delete later.
+reg MEMWBwaddr;
+reg WBMuxResult;
 
 wire [15:0] rdata1; // Variables connected to reg file
 wire [15:0] rdata2;
@@ -98,6 +104,10 @@ reg [15:0] IDEXSignExtend;
 
 // Sasaki added, might not need
 reg [16:0] IDEXInstr;
+
+// For RegDst Mux
+reg [2:0] IDEXRegfield2; // rt
+reg [2:0] IDEXRegfield3; // rd
 
 //   --- Variables in the EX stage ---
 wire [15:0] alusrc2;
@@ -159,6 +169,7 @@ always @(posedge clock)
 
 assign IFIDOpcode = IFIDInstr[16:13];
 assign IFIDRegfield1 = IFIDInstr[12:10];
+assign IFIDRegfield2 = IFIDInstr[9:7];
 assign IFIDRegfield3 = IFIDInstr[6:4];
 assign IFIDConst = IFIDInstr[6:0];
 
@@ -170,9 +181,8 @@ assign IFIDConst = IFIDInstr[6:0];
 // Note that these lines will set register $3 to the
 // value 5
 
-assign waddr = 3;  
-assign wdata = 5;
-assign RegWriteStub = 1;
+assign waddr = MEMWBwaddr;  
+assign wdata = WBMuxResult;
 assign negclock = ~clock;  // Reg file is synchronized
 						   // to pos clock edge, so we
 						   // supply inverted clock
@@ -237,6 +247,10 @@ always @(posedge clock)
 
 	// Sasaki added, might not need
 	IDEXInstr <= IFIDInstr;
+	
+	// For MUX in Execute Stage, RegDst
+	IFEXRegfield2 <= IFIDRegfield2; // rt
+	IFEXRegfield3 <= IFEXRegfield3; // rd
 	end
 
 
