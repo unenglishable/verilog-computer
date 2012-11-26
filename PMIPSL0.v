@@ -110,7 +110,7 @@ reg [2:0] IDEXRegfield3; // rd
 wire [15:0] alusrc2;
 wire [15:0] aluout1;
 reg [15:0] addResult;
-wire [15:0] shiftLeft2;
+wire [15:0] shiftLeft1;
 wire aluzero;
 
 reg [2:0] RegDstMuxResult;
@@ -322,9 +322,9 @@ MUX2_Address RegDstMux(
 	IDEXRegDst		// select
 	);
 
-assign shiftLeft2 = IDEXSignExtend << 2;
-always @(IDEXPCPlus2 or shiftLeft2)
-	addResult = IDEXPCPlus2 + shiftLeft2;
+assign shiftLeft1 = IDEXSignExtend << 1;
+always @(IDEXPCPlus2 or shiftLeft1)
+	addResult = IDEXPCPlus2 + shiftLeft1;
 
 assign aluresult = aluout1; // Connect the alu with the outside world
 
