@@ -34,7 +34,6 @@ input reset;
 reg	[15:0] PC; 
 wire [15:0] StallMuxResult;
 wire [15:0] PCMuxResult;
-wire [15:0] PCAddResult;
 wire [15:0] PCPlus2;
 wire Stall;
 wire PCSrc;
@@ -148,7 +147,7 @@ reg MEMWBMemtoReg;
 assign PCPlus2 = PC + 2; // This is the adder circuit near the PC
 
 MUX2 stallMux(StallMuxResult,PCPlus2,PC,Stall);
-MUX2 pcMux(PCMuxResult,StallMuxResult,PCAddResult,PCSrc);
+MUX2 pcMux(PCMuxResult,StallMuxResult,EXMEMAddResult,PCSrc);
 
 always @(posedge clock)
 	begin
