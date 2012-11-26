@@ -200,6 +200,8 @@ assign negclock = ~clock;  // Reg file is synchronized
 	);			
 
 assign IDSignExt = {{9{IFIDInstr[6]}},IFIDInstr[6:0]};
+assign IDEXRegfield2 = IFIDRegfield2;
+assign IDEXRegfield3 = IFIDRegfield3;
 
 
 Control cntrol1(
